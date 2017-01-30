@@ -1,0 +1,449 @@
+# This file is made/ adapted by Esther Meeuwissen. For questions esther.meeuwissen@fcdonders.ru.nl
+
+######################################			
+double refr_rate = 60.0;
+#double refr_dur = (1000.0/refr_rate)/2.0;
+
+int refr_dur = 28;
+int IWI = 150;
+
+int time1;
+
+int duur = 300;														# definieren parameters; duur,
+int max_paragraphs = 1000;											# max_paragraphs,
+int max_lines = 1000;            								# max-lines,
+int stuur = 0;	
+
+string space = "space";														# stuur,
+#int stuurdelay = 0;
+#output_port port = output_port_manager.get_port( 1 );    # definieren output poort als 'port' en port is de eerste output poort (het aantal output poorten is gedefinieerd als port_count)
+string itemlijst = "versie1.txt";								# definieren parameter in de vorm van een string. de paramater is itemlijst en die staat in een .txt file
+
+################################################# list of flips, version a.
+array <int> response_hand [192] = {2,1,2,1,1,2,2,1,1,2,2,1,1,1,2,1,2,2,1,2,1,1,2,2,2,1,1,1,2,2,2,1,1,2,2,2,1,1,1,2,1,2,1,2,1,2,2,1,2,2,1,1,2,1,2,1,2,2,1,1,1,1,2,2,2,1,1,2,1,2,2,2,1,1,2,1,1,2,2,1,1,2,1,1,2,2,2,1,1,1,2,2,1,2,1,2,2,1,2,1,2,2,1,1,2,1,1,2,2,1,1,2,1,2,1,2,2,1,2,1,1,1,2,2,2,1,1,2,2,1,1,1,2,1,2,2,1,1,2,1,2,1,2,2,2,1,1,2,2,2,1,2,1,1,1,1,2,2,1,2,2,2,1,1,1,2,1,2,1,1,2,2,1,2,2,1,1,1,2,1,2,2,2,1,1,2,2,1,1,1,2,2}; 
+
+
+######################################	
+#port.send_code(210);
+oefen.present();														# presenteer trial 'oefen'
+term.print_line("start oefen");
+
+
+#################################################################################
+array<string> paragraphs[max_paragraphs][max_lines];		# array met erin strings definieren die paragrapghs heet met {1, ..., 1000}(max_paragraghs) en dat 1000 (max_lines) keer
+int paragraph_count = 0;											# definieren paragragh_count
+array<int> line_counts[max_paragraphs]; 						# array maken met integers die line_counts heet met {1,...,1000}
+### returns the number of words in a string
+### words must be separated by 1 space only!
+sub																		# ?
+   int count_words( string line )								# definieren count_words (= het aantal woorden in de zin) en ook string line (waarin alle letters van de woorden/zinnen komen te staan uit de txt file)
+begin  																	# 
+   int count = 1;														# definieren count
+   loop 
+		int i = 1 														# definieren i (= zoveelste letter/plaats in de zin)
+	until i > line.count() 											# loop uitvoeren tot i groter is dan line.count (= het laatste letter van de zin)
+	begin																	
+      if (line[i] == ' ') 											# als je een lege plek in line (een spatie) tegenkomt, 
+      then	count = count + 1										# tel 1 bij count op  										
+      end;
+      i = i + 1														# ga naar volgende letter/ plaats en ga kijken wat daar staat
+   end;
+   return count				     									# count is het aantal woorden in de zin uit de txt file
+end;
+
+### splits string into an array of words
+### words must be separated by 1 space only
+sub
+   split( string line, array<string,1>& words )				# ? string met de letters omzetten in een array met de woorden en die heet words
+begin
+   int count = 1;														# def count  (aantal woorden)
+   int pos = 1;														# def pos (begin letter van ieder woord)
+   loop 
+	int i = 1 															# def i (aantal letters)
+	until i > line.count() 											# loop uitvoeren tot i groter is dan line.count (= het laatste letter van de zin)
+	begin
+      if (line[i] == ' ') 											# bij een spatie
+		then words[count] = line.substring( pos, i - pos );# maak een substring van het begin tot het einde van het woord en zet dit in de array words op plaats count 
+           count = count + 1;										# count wordt bij iedere spatie 1 hoger
+          pos = i + 1												# pos 1 hoger (plaats van de eerste letter van het volgende woord)
+      end;
+      i = i + 1														# i wordt na iedere letter 1 hoger
+   end;
+   words[count] = line.substring( pos, line.count() - pos + 1 ); # maak substring van eerste letter tot de laatste letter + de spatie erachter en zet dit in words op plaats count
+end;                               
+	
+#####################################################################################
+### read in the text
+##################################################################################### 
+
+input_file file = new input_file;								# nieuwe file gedefinieerd
+file.open( itemlijst );												# open deze file, hij heet itemlijst
+string temp = file.get_line();									# temp definieren, string met text from the current file position until reaching a delimiter character (enter) 
+int telm = 1 ;       												# def telm
+paragraph_count = 1;													# def paragraph_count
+
+loop 
+until (!file.last_succeeded()) 									# indicates if the last attempted read method succeeded
+begin
+   if (temp == "") 													# als temp = einde van de zin
+	then paragraph_count = paragraph_count + 1;				# wordt paragraph_count 1 hoger
+   else
+      line_counts[paragraph_count] = line_counts[paragraph_count] + 1; # anders wordt line_counts (array {1,...,1000}) 1 hoger 
+      paragraphs[paragraph_count][line_counts[paragraph_count]] = temp # in paragraph word de text gezet die in temp staat op plaats ...???... 
+   end;
+   temp = file.get_line()											# temp vullen met ???
+end;
+	fix.present(); blank.present();								# presenteer de trials fix en blank
+          
+#######################################################################################
+#######################################################################################
+### go through all paragraphs
+#######################################################################################
+
+
+loop
+   int i = 1															# def i
+until
+   i > paragraph_count												# loop loopt tot i groter is dan paragraph_count (=)
+begin
+   # go through all lines
+   loop
+      int line = 1;													# def line #HIER BEGINREGEL WIJZIGEN
+   until
+      line > 192														# loop loopt door tot line 192 (waarschijnlijk zijn er dus 192 regels)
+   begin              
+      # go through all words in the line
+      array<string> words[count_words( paragraphs[i][line] )]; # maken array met ???
+      split( paragraphs[i][line], words ); 					# splitten van de array paragraphs in ???
+		stuur = 0;														# def stuur
+   	event.set_event_code( words[1] ); 						# wegschrijven trialnr naar logfile
+		trial1.present();
+
+	loop
+         int word = 2												# def word
+      until
+         word > words.count()										# loop loopt tot word gelijk is aan het aantal woorden in de zin (=words.count)
+      begin          
+			text1.set_caption( words[word] );   				# de text die ingevuld word in text1 is het word'e(int) woord in words(array met alle woorden)
+			text1.redraw();
+						
+         int letters = words[word].count();  				# def letters met aantal letters of each word  
+         duur = (letters * 30) + 290;       					# def duur (van het beeld op het beeldscherm) minimum 30 ms + 290 ms per letter
+			if (letters > 10) then; duur = 590; end;			# meer dan 10 letters, max woordduur = 590
+			string first =  (words[word].substring(1, 1)); # def first met de eerste letter van het woord is (woord voor het kiritische woord start met een X) 
+			string CW = (words[word].substring(2, letters-1)); # def CW met een string met de tweede tot de laatste letter van het woord
+		  
+		   if (word == 2) then; # marker trialnummer
+				if (word==2) && (first != "X")then;
+						
+						text1.set_caption( words[word] ); 
+						text1.redraw(); 
+						
+						letters = words[word].count();	
+						duur = ((letters) * 30) + 290;
+						if (letters > 10) then; duur = 590; end; 		
+						event.set_event_code( words[word] ); 
+						string trialnummer=words[1];
+						int port_code_tnr=int (trialnummer);
+	
+				      pict1.present();
+
+				      int time_pict1 = clock.time();
+				      trial1.present();
+				      
+						wait_until(time_pict1+refr_dur);
+						#port.send_code(port_code_tnr);
+						
+						wait_until(time_pict1+duur);
+				      default.present();
+
+						#port.send_code(241);
+						trial2.present();
+
+				      wait_until(time_pict1+duur+IWI);
+				      
+				elseif (word==2) && (first == "X" ) then;	
+						# woord met de X (cw-1)
+		
+						text1.set_caption( CW ); 						# zet in text 1 de tweede tot de laatste letter (het woord zelf zonder X)
+						text1.redraw(); 									# text 1 in geheugen
+						
+						letters = words[word].count(); 
+						duur = ((letters-1) * 30) + 290; 			# def tijd dat het woord in beeld is
+						if (letters > 10) then; duur = 590; end;
+						event.set_event_code( words[word] ); 	
+						string trialnummer=words[1];
+						int port_code_tnr=int (trialnummer);
+
+						pict1.present();
+
+				      int time_pict1 = clock.time();
+				      trial1.present();
+				      
+						wait_until(time_pict1+refr_dur);
+				      #port.send_code(port_code_tnr);
+						
+						wait_until(time_pict1+duur);
+				      default.present();
+						#port.send_code(241);
+				      
+				      trial2.present();
+				      
+						wait_until(time_pict1+duur+IWI);
+												
+				##########################################
+						# volgende woord ; het krtische woord (cw)
+						word = word+1; 									# 1 woord na het Xwoord is het kritsche woord	
+						text1.set_caption( words[word] ); 
+						text1.redraw(); 	  
+						
+						letters = words[word].count();
+						duur = ((letters-1) * 30) + 290;	
+						first =  (words[word].substring(1, 1));    
+						CW = (words[word].substring(2, letters-1)); 
+						text1.set_caption( CW ); text1.redraw(); 
+						if (letters > 10) then; duur = 590; end;
+						event.set_event_code( words[word] );
+						
+
+						if (first == "1" )  	  then; duur = duur + 5; 		# als de eerste letter van een woord  een 1 is wordt duur 5 groter
+						elseif (first == "2" ) then; duur= duur + 0;		# ''
+						elseif (first == "3" ) then; duur=duur + 5;		# ''
+						elseif (first == "4" ) then; duur=duur + 0;		# ''
+						end; 
+	   
+						if (first == "1" )  then; stuur =2; 		# als de eerste letter van een woord  een 1 is wordt stuur op 2 gezet 							
+						elseif (first == "2" ) then; stuur=1;		# ''
+						elseif (first == "3" ) then; stuur=4;		# ''
+						elseif (first == "4" ) then; stuur=3;		# ''
+						end; 
+			# de code die wordt uitgestuurd naar de meg computer is van de waarde stuur
+
+											
+						pict1.present();
+						
+				      time_pict1 = clock.time();
+				      trial1.present();
+				      
+				      wait_until(time_pict1+refr_dur);
+				      #port.send_code(stuur);
+						
+						wait_until(time_pict1+duur);
+				      default.present();
+						#port.send_code(241);
+				      
+				      trial2.present();
+				      
+						wait_until(time_pict1+duur+IWI);
+									
+				##################################################
+						# woord na het kritische woord (cw+1)
+						word = word+1; 														
+						
+						text1.set_caption( words[word] ); 
+						text1.redraw();
+						
+						letters = words[word].count();
+						duur = (letters * 30) + 290;
+						if (letters > 10) then; duur = 590; end;
+						if (word == words.count()) then ; duur =1000; end;
+						event.set_event_code( words[word] );
+			
+						pict1.present();
+				      
+						time_pict1 = clock.time();
+				      trial1.present();
+				      
+						wait_until(time_pict1+refr_dur);
+				      #port.send_code(240); 
+						
+						wait_until(time_pict1+duur);
+				      default.present();
+						#port.send_code(241);
+				      
+				      trial2.present();
+				      
+						wait_until(time_pict1+duur+IWI);
+						
+					end		
+		   
+			elseif (word!=2)&&(first == "X" )  then;   		# als de eerste letter een X is		
+				#########################################
+				# woord met de X (cw-1)
+				text1.set_caption( CW ); 							# zet in text 1 de tweede tot de laatste letter (het woord zelf zonder X)
+				text1.redraw();
+				
+				letters = words[word].count(); 
+				duur = ((letters-1) * 30) + 290; 				# def tijd dat het woord in beeld is
+				if (letters > 10) then; duur = 590; end;
+				event.set_event_code( words[word] ); 			# trial event krijgt een woord als event code
+				
+				pict1.present();
+				
+				int time_pict1 = clock.time();
+				trial1.present();
+				
+				wait_until(time_pict1+refr_dur);
+				#port.send_code(240);
+				
+				wait_until(time_pict1+duur);
+				default.present();
+				#port.send_code(241);
+				
+				trial2.present();
+				
+				wait_until(time_pict1+duur+IWI);
+																						
+				##########################################
+				# volgende woord ; het krtische woord (cw)
+				word = word+1; 										# 1 woord na het Xwoord is het kritsche woord	
+				text1.set_caption( words[word] ); 
+				text1.redraw();   
+				
+				letters = words[word].count();
+				duur = ((letters-1) * 30) + 290;
+				first =  (words[word].substring(1, 1));    
+				CW = (words[word].substring(2, letters-1)); 
+				text1.set_caption( CW ); 	text1.redraw(); 
+				if (letters > 10) then; duur = 590; end;
+				event.set_event_code( words[word] ); 
+
+				if (first == "1" )  then; duur = duur + 5; 		# als de eerste letter van een woord  een 1 is wordt stuur op 100 gezet 							
+				elseif (first == "2" ) then; duur= duur + 0;		# ''
+				elseif (first == "3" ) then; duur=duur + 5;		# ''
+				elseif (first == "4" ) then; duur=duur + 0;		# ''
+				end; 
+	   
+			   
+				if (first == "1" )  then; stuur =2; 			# als de eerste letter van een woord  een 1 is wordt stuur op 100 gezet 							
+				elseif (first == "2" ) then; stuur=1;			# ''
+				elseif (first == "3" ) then; stuur=4;			# ''
+				elseif (first == "4" ) then; stuur=3;			# ''
+				end; 
+
+				pict1.present();
+				
+				time_pict1 = clock.time();
+				trial1.present();
+				
+				wait_until(time_pict1+refr_dur);
+				#port.send_code(stuur);
+				
+				wait_until(time_pict1+duur);
+				default.present();
+				#port.send_code(241);
+				
+				trial2.present();
+				
+				wait_until(time_pict1+duur+IWI);
+									
+				##################################################
+				# woord na het kritische woord (cw+1)
+				word = word+1; 														
+				text1.set_caption( words[word] ); 
+				text1.redraw(); 
+				
+				letters = words[word].count(); 
+				duur = (letters * 30) + 290;
+				if (letters > 10) then; duur = 590; end;
+				if (word == words.count()) then ; duur =1000; end;
+				event.set_event_code( words[word] );
+	
+				pict1.present();
+				
+				time_pict1 = clock.time();
+				trial1.present();
+				
+				wait_until(time_pict1+refr_dur);
+				#port.send_code(240);
+				
+				wait_until(time_pict1+duur);
+				default.present();
+				#port.send_code(241);
+				
+				trial2.present();
+				
+				wait_until(time_pict1+duur+IWI);
+				
+			else;																# alle woorden zonder X ervoor
+				text1.set_caption( words[word] ); 
+				text1.redraw(); 
+
+				letters = words[word].count(); 
+				duur = (letters * 30) + 290;
+				if (letters > 10) then; duur = 590; end;	
+				if (word == words.count()) then; duur =1000; end;
+				event.set_event_code( words[word] ); 
+ 	
+				pict1.present();
+				
+				int time_pict1 = clock.time();
+				trial1.present();
+				
+				wait_until(time_pict1+refr_dur);
+				#port.send_code(240);
+				
+				wait_until(time_pict1+duur);
+				default.present();
+				#port.send_code(241);
+				
+				trial2.present();
+				
+				wait_until(time_pict1+duur+IWI);
+				 
+			end;	
+         word = word + 1;												# naar het volgende woord in de zin, de loop nog een keer doorlopen
+      end;    
+      
+      int screen = response_hand[line];
+      		
+		if 		screen == 1 then;
+					
+					corrscherm1.set_port_code(251);
+					opinie1.present();
+					
+					
+	   elseif	screen ==2 then;
+					
+					corrscherm2.set_port_code(252);
+					opinie2.present();			
+
+		end;		
+		
+		beep.present();									fix.present();  blank.present(); 							# voer trials fix, beep, en bank uit      
+      
+		if (words[1]=="21") then;
+      eindeoefen.present();
+		#port.send_code(211);
+		blank.present(); fix.present(); blank.present();
+		elseif  (words[1]== "51") then;
+		photo1.present(); endpause.present(); 
+		#port.send_code(212);
+		blank.present(); fix.present(); blank.present();
+		elseif  (words[1]== "81") then;
+		photo2.present(); endpause.present(); 
+		#port.send_code(213);
+		blank.present(); fix.present(); blank.present();
+		elseif  (words[1]== "111") then;
+		photo3.present(); endpause.present(); 
+		#port.send_code(214);
+		blank.present(); fix.present(); blank.present();
+		elseif  (words[1]== "141") then;
+		photo4.present(); endpause.present(); 
+		#port.send_code(215);
+		blank.present(); fix.present(); blank.present();
+		elseif  (words[1]== "171") then;
+		photo5.present(); endpause.present(); 
+		#port.send_code(216);
+		blank.present(); fix.present(); blank.present();
+		end;
+      
+		line = line + 1;  												# naar volgende regel/ zin
+
+   end;
+
+   default.present();													# voer trial default uit (= lege picture)
+   i = i + 1;	
+end;
+einde.present();															# voer trial einde uit
+										
